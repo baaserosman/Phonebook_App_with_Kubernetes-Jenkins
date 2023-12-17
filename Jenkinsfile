@@ -49,6 +49,38 @@ pipeline {
                     '''
                 }
             }
+            stage('Installing eksctl, kubectl and creating EKS Cluster and deploying Phonebook Application') {
+                steps {
+                    echo 'Installing eksctl, kubectl and creating EKS Cluster and deploying Phonebook Application'
+                    sh '''
+                    curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+                    eksctl version
+
+                    curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.26.4/2023-05-11/bin/linux/amd64/kubectl
+                    chmod +x ./kubectl
+                    kubectl version --short --client
+
+                    eksctl create cluster -f cluster.yaml
+                    
+                    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.0/deploy/static/provider/cloud/deploy.yaml
+
+                    sleep 200
+
+                    kubectl apply -f ingress.yaml
+                    kubectl apply -f mysql-configmap.yaml
+                    kubectl apply -f mysql-deploy_possix.yaml
+                    kubectl apply -f mysql-pv.yaml
+                    kubectl apply -f mysql-pvc.yaml
+                    kubectl apply -f mysql-secret-possix.yaml
+                    kubectl apply -f mysql-svc.yaml
+                    kubectl apply -f resultserver-deploy.yaml
+                    kubectl apply -f resultserver-service.yaml
+                    kubectl apply -f webserver-deploy.yaml
+                    kubectl apply -f webserver-service.yaml
+                    kubectl apply -f server-configmap.yaml
+
+                    '''
+                }
 
 
         }
