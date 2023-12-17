@@ -23,55 +23,80 @@ pipeline {
                     '''
                         }
                     }
-            stage('Build App Docker Images for WEB') {
-                steps {
-                    echo 'Building App Images for web_server'
-                    sh '''
-                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                    cd 02_image_files/image_for_web_server
-                    docker build -t my_repo/phonebook-app:web .
-                    docker tag my_repo/phonebook-app:web ${ECR_REGISTRY}/${APP_REPO_NAME}:web
-                    docker push ${ECR_REGISTRY}/${APP_REPO_NAME}:web
-                    docker image ls
-                    '''
-                }
-            }
-            stage('Build App Docker Images for RESULT') {
-                steps {
-                    echo 'Building App Images for result_server'
-                    sh '''
-                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                    cd 02_image_files/image_for_result_server
-                    docker build -t my_repo/phonebook-app:result .
-                    docker tag my_repo/phonebook-app:result ${ECR_REGISTRY}/${APP_REPO_NAME}:result
-                    docker push ${ECR_REGISTRY}/${APP_REPO_NAME}:result
-                    docker image ls
-                    '''
-                }
-            }
-            stage('Installing eksctl, kubectl and creating EKS Cluster and deploying Phonebook Application') {
-                steps {
-                    echo 'Installing eksctl, kubectl and creating EKS Cluster and deploying Phonebook Application'
-                    sh '''
-                    curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-                    eksctl version
+            // stage('Build App Docker Images for WEB') {
+            //     steps {
+            //         echo 'Building App Images for web_server'
+            //         sh '''
+            //         aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+            //         cd 02_image_files/image_for_web_server
+            //         docker build -t my_repo/phonebook-app:web .
+            //         docker tag my_repo/phonebook-app:web ${ECR_REGISTRY}/${APP_REPO_NAME}:web
+            //         docker push ${ECR_REGISTRY}/${APP_REPO_NAME}:web
+            //         docker image ls
+            //         '''
+            //     }
+            // }
+            // stage('Build App Docker Images for RESULT') {
+            //     steps {
+            //         echo 'Building App Images for result_server'
+            //         sh '''
+            //         aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+            //         cd 02_image_files/image_for_result_server
+            //         docker build -t my_repo/phonebook-app:result .
+            //         docker tag my_repo/phonebook-app:result ${ECR_REGISTRY}/${APP_REPO_NAME}:result
+            //         docker push ${ECR_REGISTRY}/${APP_REPO_NAME}:result
+            //         docker image ls
+            //         '''
+            //     }
+            // }
+            // stage('Installing eksctl, kubectl and creating EKS Cluster and deploying Phonebook Application') {
+            //     steps {
+            //         echo 'Installing eksctl, kubectl and creating EKS Cluster and deploying Phonebook Application'
+            //         sh '''
+            //         curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+            //         eksctl version
 
-                    curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.26.4/2023-05-11/bin/linux/amd64/kubectl
-                    chmod +x ./kubectl
-                    kubectl version --short --client
+            //         curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.26.4/2023-05-11/bin/linux/amd64/kubectl
+            //         chmod +x ./kubectl
+            //         kubectl version --short --client
                     
-                    eksctl create cluster -f 03_cluster/cluster.yaml
+            //         eksctl create cluster -f 03_cluster/cluster.yaml
                     
-                    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.0/deploy/static/provider/cloud/deploy.yaml
+            //         kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.0/deploy/static/provider/cloud/deploy.yaml
 
-                    sleep 200
+            //         sleep 200
 
-                    cd 04_yaml_files
+            //         cd 04_yaml_files
 
-                    kubectl apply -f .
+            //         kubectl apply -f .
 
-                    '''
-                }
+            //         '''
+            //     }
+        // }
+    }
+    post {
+        always {
+            echo 'Deleting all local images'
+            sh 'docker image prune -af'
+
+            echo 'Delete the Image Repository on ECR'
+            sh '''
+                aws ecr delete-repository \
+                  --repository-name ${APP_REPO_NAME} \
+                  --region ${AWS_REGION}\
+                  --force
+                '''
+
+            echo 'Delete the Application and yaml files'            
+            sh '''
+            pwd
+            kubectl delete -f .
+            '''
+
+            echo 'Tear down the EKS Cluster'
+            sh '''
+            eksctl delete cluster -f cluster.yaml
+            '''
         }
     }
 }
