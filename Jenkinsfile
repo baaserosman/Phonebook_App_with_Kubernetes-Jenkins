@@ -90,11 +90,13 @@ pipeline {
             echo 'Delete the Application and yaml files'            
             sh '''
             pwd
+            cd 04_yaml_files
             kubectl delete -f .
             '''
 
             echo 'Tear down the EKS Cluster'
             sh '''
+            cd 03_cluster
             eksctl delete cluster -f cluster.yaml
             '''
         }
