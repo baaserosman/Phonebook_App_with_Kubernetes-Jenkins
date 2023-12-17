@@ -28,9 +28,9 @@ pipeline {
                     echo 'Building App Images for web_server'
                     sh '''
                     aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                    cd image_for_web_server
-                    docker build -t clarusway-repo/phonebook-app:web .
-                    docker tag clarusway-repo/phonebook-app:web ${ECR_REGISTRY}/${APP_REPO_NAME}:web
+                    cd 02_image_files/image_for_web_server
+                    docker build -t my_repo/phonebook-app:web .
+                    docker tag my_repo/phonebook-app:web ${ECR_REGISTRY}/${APP_REPO_NAME}:web
                     docker push ${ECR_REGISTRY}/${APP_REPO_NAME}:web
                     docker image ls
                     '''
@@ -41,9 +41,9 @@ pipeline {
                     echo 'Building App Images for result_server'
                     sh '''
                     aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                    cd image_for_result_server
-                    docker build -t clarusway-repo/phonebook-app:result .
-                    docker tag clarusway-repo/phonebook-app:result ${ECR_REGISTRY}/${APP_REPO_NAME}:result
+                    cd 02_image_files/image_for_result_server
+                    docker build -t my_repo/phonebook-app:result .
+                    docker tag my_repo/phonebook-app:result ${ECR_REGISTRY}/${APP_REPO_NAME}:result
                     docker push ${ECR_REGISTRY}/${APP_REPO_NAME}:result
                     docker image ls
                     '''
