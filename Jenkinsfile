@@ -110,3 +110,11 @@ pipeline {
 }
 
 // until [[ -e /var/lib/jenkins/file3  ]] ; do echo "there is no file" sleep 10 ; done
+
+// stage('Deploy to Production Environment'){
+//                 steps{
+//                     timeout(time:5, unit:'DAYS'){
+//                         input message:'Approve for Destruction All Resources?'
+//                         }
+//                     }
+//                 }
